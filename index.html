@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ANIME VAULT — Character Archive</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@300;400;600;700&family=Noto+Serif+JP:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #04030a;
+  --surface: #0d0b18;
+  --border: rgba(255,255,255,0.06);
+  --text: #e8e4f0;
+  --muted: rgba(232,228,240,0.4);
+}
+
+*, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* ── NOISE GRAIN ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity: 0.5;
+}
+
+/* ── HEADER ── */
+header {
+  position: sticky; top: 0; z-index: 100;
+  padding: 18px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(180deg, rgba(4,3,10,0.98) 0%, transparent 100%);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.6rem;
+  letter-spacing: 6px;
+  background: linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.5) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.header-right {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.stat-pill {
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  background: rgba(255,255,255,0.03);
+}
+
+/* ── FILTER TABS ── */
+.filter-bar {
+  display: flex; gap: 8px;
+  padding: 20px 28px 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.filter-bar::-webkit-scrollbar { display: none; }
+
+.filter-btn {
+  flex-shrink: 0;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding: 7px 18px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.filter-btn.active, .filter-btn:hover {
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  border-color: rgba(255,255,255,0.15);
+}
+
+.filter-btn[data-anime="JJK"].active    { border-color: #7b2fff; color: #b46fff; background: rgba(123,47,255,0.1); }
+.filter-btn[data-anime="Naruto"].active { border-color: #ff8c00; color: #ffb347; background: rgba(255,140,0,0.1); }
+.filter-btn[data-anime="AOT"].active    { border-color: #6ea8c8; color: #a0d0ee; background: rgba(110,168,200,0.1); }
+.filter-btn[data-anime="DS"].active     { border-color: #e8a0b0; color: #ffccd5; background: rgba(232,160,176,0.1); }
+
+/* ── SECTION HEADER ── */
+.section-header {
+  padding: 28px 28px 16px;
+  display: flex; align-items: baseline; gap: 16px;
+}
+
+.section-title {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.8rem;
+  letter-spacing: 4px;
+}
+
+.section-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, var(--border), transparent);
+}
+
+.section-count {
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  color: var(--muted);
+}
+
+/* ── HORIZONTAL SCROLL ROW ── */
+.scroll-row {
+  display: flex;
+  gap: 16px;
+  padding: 0 28px 36px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.scroll-row::-webkit-scrollbar { display: none; }
+
+/* ── CHARACTER CARD ── */
+.char-card {
+  flex-shrink: 0;
+  width: 220px;
+  border-radius: 12px;
+  overflow: visible;
+  cursor: pointer;
+  position: relative;
+  scroll-snap-align: start;
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+
+.char-card:hover { transform: translateY(-8px); }
+.char-card:hover .card-glow { opacity: 1; }
+.char-card:hover .char-img { filter: saturate(1.15) brightness(1.05); transform: scale(1.06); }
+
+/* Aura Glow */
+.card-glow {
+  position: absolute;
+  inset: -1px;
+  border-radius: 13px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.char-inner {
+  position: relative; z-index: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* Image */
+.img-wrap {
+  position: relative;
+  width: 100%;
+  height: 260px;
+  overflow: hidden;
+}
+
+.char-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  transition: filter 0.4s ease, transform 0.5s ease;
+  background: #111;
+  transform-origin: top center;
+}
+
+/* Aura layer behind img */
+.aura-layer {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 70%;
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(to top, var(--aura-color, transparent) 0%, transparent 100%);
+  opacity: 0.45;
+}
+
+.img-wrap::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(4,3,10,0.85) 100%);
+  z-index: 2;
+}
+
+/* Status badge */
+.status-badge {
+  position: absolute;
+  top: 10px; right: 10px;
+  z-index: 5;
+  font-size: 0.55rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 4px 9px;
+  border-radius: 3px;
+}
+
+.status-badge.alive  { background: rgba(0,255,100,0.15); color: #44ff88; border: 1px solid rgba(0,255,100,0.3); }
+.status-badge.dead   { background: rgba(255,50,50,0.15);  color: #ff6666; border: 1px solid rgba(255,50,50,0.3);  }
+.status-badge.unknown{ background: rgba(200,200,200,0.1); color: #aaa;    border: 1px solid rgba(200,200,200,0.2); }
+
+/* Rank badge */
+.rank-badge {
+  position: absolute;
+  top: 10px; left: 10px;
+  z-index: 5;
+  font-size: 0.55rem;
+  font-family: 'Bebas Neue', cursive;
+  letter-spacing: 2px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.7);
+}
+
+/* Info panel */
+.card-info {
+  padding: 14px 14px 16px;
+  background: var(--surface);
+}
+
+.char-name {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.3rem;
+  letter-spacing: 3px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.char-title {
+  font-size: 0.62rem;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  font-weight: 300;
+}
+
+/* Quote */
+.char-quote {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 0.72rem;
+  font-style: italic;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.6;
+  padding: 8px 10px;
+  border-left: 2px solid var(--aura-color, rgba(255,255,255,0.2));
+  margin-bottom: 14px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 0 4px 4px 0;
+}
+
+/* Stats row */
+.stats-row {
+  display: flex; gap: 8px; margin-bottom: 12px;
+}
+
+.stat-box {
+  flex: 1;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 6px;
+  padding: 7px 5px;
+  text-align: center;
+}
+
+.stat-num {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.2rem;
+  line-height: 1;
+  display: block;
+}
+
+.stat-num.wins  { color: #44ff88; }
+.stat-num.losses{ color: #ff6666; }
+.stat-num.neutral{color: var(--muted); }
+
+.stat-lbl {
+  font-size: 0.5rem;
+  letter-spacing: 2px;
+  color: var(--muted);
+  display: block;
+  margin-top: 2px;
+}
+
+/* Death info */
+.death-info {
+  background: rgba(255,50,50,0.06);
+  border: 1px solid rgba(255,50,50,0.15);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex; gap: 8px; align-items: flex-start;
+}
+
+.death-icon { font-size: 0.9rem; flex-shrink: 0; }
+
+.death-text {
+  font-size: 0.62rem;
+  line-height: 1.5;
+  color: rgba(255,150,150,0.8);
+  letter-spacing: 0.5px;
+}
+
+.death-by {
+  font-weight: 700;
+  color: #ff8888;
+  letter-spacing: 1px;
+}
+
+/* ── DIVIDER ── */
+.divider {
+  width: calc(100% - 56px);
+  margin: 0 28px 8px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--border), transparent);
+}
+
+/* ── FOOTER ── */
+footer {
+  text-align: center;
+  padding: 30px;
+  font-size: 0.6rem;
+  letter-spacing: 4px;
+  color: rgba(255,255,255,0.15);
+}
+
+/* ── MODAL ── */
+#modal-overlay {
+  position: fixed; inset: 0;
+  z-index: 5000;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s ease;
+  padding: 20px;
+}
+
+#modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal-box {
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  width: 100%; max-width: 420px;
+  max-height: 85vh;
+  overflow-y: auto;
+  transform: scale(0.92) translateY(20px);
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  scrollbar-width: none;
+  position: relative;
+}
+
+#modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
+.modal-box::-webkit-scrollbar { display: none; }
+
+.modal-img-wrap {
+  position: relative;
+  height: 300px;
+  overflow: hidden;
+  border-radius: 16px 16px 0 0;
+}
+
+.modal-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.modal-aura {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center bottom, var(--modal-aura, transparent) 0%, transparent 70%);
+  opacity: 0.5;
+}
+
+.modal-img-wrap::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 60%;
+  background: linear-gradient(transparent, var(--surface));
+}
+
+.modal-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: white; font-size: 1.1rem;
+  cursor: pointer; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.modal-body { padding: 20px 22px 28px; }
+
+.modal-name {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 2.2rem;
+  letter-spacing: 5px;
+  line-height: 1;
+}
+
+.modal-subtitle {
+  font-size: 0.7rem; letter-spacing: 3px; color: var(--muted); margin: 4px 0 18px;
+}
+
+.modal-quote {
+  font-family: 'Noto Serif JP', serif;
+  font-style: italic;
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: rgba(255,255,255,0.65);
+  border-left: 2px solid var(--modal-aura, rgba(255,255,255,0.3));
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 0 6px 6px 0;
+}
+
+.modal-stats {
+  display: flex; gap: 10px; margin-bottom: 18px;
+}
+
+.modal-stat {
+  flex: 1; background: rgba(0,0,0,0.4);
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 8px; text-align: center;
+}
+
+.modal-stat-num {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 2rem; line-height: 1; display: block;
+}
+
+.modal-stat-lbl {
+  font-size: 0.55rem; letter-spacing: 2px; color: var(--muted);
+  display: block; margin-top: 3px;
+}
+
+.modal-ability {
+  font-size: 0.65rem; letter-spacing: 2px; color: var(--muted); margin-bottom: 8px; font-weight: 700;
+}
+
+.ability-tags {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px;
+}
+
+.ability-tag {
+  font-size: 0.6rem; letter-spacing: 1.5px;
+  padding: 4px 10px; border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.03);
+}
+
+.modal-death {
+  background: rgba(255,50,50,0.06);
+  border: 1px solid rgba(255,50,50,0.2);
+  border-radius: 8px; padding: 14px;
+}
+
+.modal-death-title {
+  font-size: 0.6rem; letter-spacing: 3px; color: #ff8888;
+  font-weight: 700; margin-bottom: 8px;
+}
+
+.modal-death-cause {
+  font-size: 0.8rem; line-height: 1.6; color: rgba(255,180,180,0.8);
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">ANIME VAULT</div>
+  <div class="header-right">
+    <div class="stat-pill">20 CHARACTERS</div>
+  </div>
+</header>
+
+<div class="filter-bar">
+  <button class="filter-btn active" data-anime="ALL" onclick="filterBy('ALL', this)">ALL</button>
+  <button class="filter-btn" data-anime="JJK"    onclick="filterBy('JJK', this)">JUJUTSU KAISEN</button>
+  <button class="filter-btn" data-anime="Naruto"  onclick="filterBy('Naruto', this)">NARUTO</button>
+  <button class="filter-btn" data-anime="AOT"     onclick="filterBy('AOT', this)">ATTACK ON TITAN</button>
+  <button class="filter-btn" data-anime="DS"      onclick="filterBy('DS', this)">DEMON SLAYER</button>
+</div>
+
+<div id="gallery-root"></div>
+
+<footer>ANIME VAULT — CHARACTER ARCHIVE &nbsp;·&nbsp; ALL SERIES</footer>
+
+<!-- MODAL -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal-box" id="modal-box">
+    <div class="modal-img-wrap" id="modal-img-wrap">
+      <img class="modal-img" id="modal-img" src="" alt="">
+      <div class="modal-aura" id="modal-aura"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-name" id="modal-name"></div>
+      <div class="modal-subtitle" id="modal-subtitle"></div>
+      <div class="modal-quote" id="modal-quote"></div>
+      <div class="modal-stats" id="modal-stats"></div>
+      <div class="modal-ability" id="modal-ability-label"></div>
+      <div class="ability-tags" id="modal-abilities"></div>
+      <div id="modal-death-wrap"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CHARS = [
+  // ──────── JUJUTSU KAISEN ────────
+  {
+    anime: "JJK", name: "GOJO SATORU", title: "Honored One / Special Grade Sorcerer",
+    img: "https://i.ibb.co/ZzGpzZMZ/dc6d0873a8be68f6f98c7214b6749039.jpg",
+    quote: "Throughout Heaven and Earth, I alone am the honored one.",
+    aura: "#7b2fff",
+    rank: "SPECIAL GRADE", status: "dead",
+    wins: 1000, losses: 1,
+    abilities: ["Infinity", "Six Eyes", "Hollow Purple", "Unlimited Void", "Domain Expansion"],
+    death: { by: "Sukuna (Heian Era)", reason: "Killed during the Shinjuku Showdown after Sukuna surpassed the limits of Infinity using the slash that cuts all." }
+  },
+  {
+    anime: "JJK", name: "RYOMEN SUKUNA", title: "King of Curses",
+    img: "https://i.ibb.co/1fzwpC62/8e6ecab84d9012903ab03b623f096ed6.jpg",
+    quote: "I don't care about good or evil. I just want to fight the strong.",
+    aura: "#cc0020",
+    rank: "SPECIAL GRADE", status: "alive",
+    wins: 999, losses: 0,
+    abilities: ["Malevolent Shrine", "Dismantle", "Cleave", "Ten Shadows", "World Cutting Slash"],
+    death: null
+  },
+  {
+    anime: "JJK", name: "YUJI ITADORI", title: "Sukuna's Vessel",
+    img: "https://i.ibb.co/DnsFx1P/4342178f2694a88fdd056f7aa6bb7253.jpg",
+    quote: "I don't know how to live, but I know the kind of death I want.",
+    aura: "#ff4466",
+    rank: "GRADE 1", status: "alive",
+    wins: 42, losses: 8,
+    abilities: ["Divergent Fist", "Black Flash", "Shrinking", "Cursed Technique Reversal"],
+    death: null
+  },
+  {
+    anime: "JJK", name: "MEGUMI FUSHIGURO", title: "Ten Shadows Technique User",
+    img: "https://i.ibb.co/qMQ56VCJ/f05cfb23136f4c0ab25ba7f6a7f1a4bd.jpg",
+    quote: "I want to save the people I like. That's it.",
+    aura: "#1a3a6e",
+    rank: "GRADE 2", status: "alive",
+    wins: 31, losses: 6,
+    abilities: ["Ten Shadows Technique", "Divine Dogs", "Mahoraga", "Domain Expansion"],
+    death: null
+  },
+  {
+    anime: "JJK", name: "TOJI FUSHIGURO", title: "Sorcerer Killer",
+    img: "https://i.ibb.co/ZzNLPGKB/e1179f9eb6b203a20cf524f7eeb98319.jpg",
+    quote: "Talent is something you make bloom. Instinct is something you polish.",
+    aura: "#2a9d8f",
+    rank: "ASSASSIN", status: "dead",
+    wins: 188, losses: 1,
+    abilities: ["Zero Cursed Energy", "Heavenly Restriction", "Inverted Spear of Heaven", "Chain of a Thousand Miles"],
+    death: { by: "Himself", reason: "After being reincarnated and recognizing his son Megumi, Toji chose to end his own reincarnation rather than harm him." }
+  },
+
+  // ──────── NARUTO ────────
+  {
+    anime: "Naruto", name: "NARUTO UZUMAKI", title: "Seventh Hokage / Child of Prophecy",
+    img: "https://i.ibb.co/zHVHS9kN/IMG-20260225-WA0045.jpg",
+    quote: "I never go back on my word — that's my nindo, my ninja way.",
+    aura: "#ff8c00",
+    rank: "HOKAGE", status: "alive",
+    wins: 340, losses: 12,
+    abilities: ["Nine-Tails Chakra", "Sage Mode", "Rasengan", "Talk no Jutsu", "Baryon Mode"],
+    death: null
+  },
+  {
+    anime: "Naruto", name: "SASUKE UCHIHA", title: "Last Uchiha / Shadow Hokage",
+    img: "https://i.ibb.co/4wvB0cVR/IMG-20260225-WA0062.jpg",
+    quote: "I have long since closed my eyes... My only goal is in the darkness.",
+    aura: "#8b00ff",
+    rank: "S-RANK", status: "alive",
+    wins: 290, losses: 14,
+    abilities: ["Sharingan", "Rinnegan", "Chidori", "Amaterasu", "Susanoo"],
+    death: null
+  },
+  {
+    anime: "Naruto", name: "ITACHI UCHIHA", title: "ANBU / Akatsuki Member",
+    img: "https://i.ibb.co/Y4Dy8CqJ/IMG-20260225-WA0054.jpg",
+    quote: "People live their lives bound by what they accept as correct and true.",
+    aura: "#cc1122",
+    rank: "S-RANK", status: "dead",
+    wins: 410, losses: 1,
+    abilities: ["Mangekyō Sharingan", "Tsukuyomi", "Amaterasu", "Susanoo", "Izanami"],
+    death: { by: "His illness (& Sasuke)", reason: "Itachi had been terminally ill throughout their fight. He let Sasuke end it, smiling — his final act of love for his brother." }
+  },
+  {
+    anime: "Naruto", name: "MINATO NAMIKAZE", title: "Fourth Hokage / Yellow Flash",
+    img: "https://i.ibb.co/My9VK0sY/IMG-20260225-WA0058-1.jpg",
+    quote: "I want to believe in the future my son will create.",
+    aura: "#f5c842",
+    rank: "KAGE", status: "dead",
+    wins: 560, losses: 0,
+    abilities: ["Flying Thunder God", "Rasengan", "Bijuu Mode", "Dead Demon Consuming Seal"],
+    death: { by: "Dead Demon Consuming Seal", reason: "Sacrificed himself to seal half of Kurama's chakra into baby Naruto, giving his son a weapon against Obito's Tobi." }
+  },
+  {
+    anime: "Naruto", name: "MADARA UCHIHA", title: "Ghost of the Uchiha",
+    img: "https://i.ibb.co/RkfXvrgQ/ae53b1724acb78a768fbdee96426e657.jpg",
+    quote: "Wake up to reality! Nothing ever goes as planned in this world.",
+    aura: "#3a0a5e",
+    rank: "LEGENDARY", status: "dead",
+    wins: 800, losses: 2,
+    abilities: ["Rinnegan", "Perfect Susanoo", "Limbo", "Infinite Tsukuyomi", "Wood Release"],
+    death: { by: "Black Zetsu / Kaguya", reason: "Betrayed by Black Zetsu who pierced him to resurrect Kaguya Otsutsuki, fulfilling the true plan all along." }
+  },
+
+  // ──────── ATTACK ON TITAN ────────
+  {
+    anime: "AOT", name: "EREN YEAGER", title: "Attack Titan / Founding Titan",
+    img: "https://i.ibb.co/FLMgVmkf/de7ac028198e836022cea2cdd2a7bd89.jpg",
+    quote: "I keep moving forward, until my enemies are destroyed.",
+    aura: "#6ea8c8",
+    rank: "TITAN SHIFTER", status: "dead",
+    wins: 220, losses: 1,
+    abilities: ["Attack Titan", "Founding Titan", "War Hammer Titan", "The Rumbling", "Paths"],
+    death: { by: "Mikasa Ackerman", reason: "Killed by Mikasa inside the mouth of his Titan form to stop the Rumbling. She kissed him goodbye before cutting his head." }
+  },
+  {
+    anime: "AOT", name: "LEVI ACKERMAN", title: "Captain / Humanity's Strongest",
+    img: "https://i.ibb.co/PG5SBPgB/e2113dbfd8f014056ffb9dc66b227565.jpg",
+    quote: "The only thing we're allowed to do is believe that we won't regret the choice we made.",
+    aura: "#a0c8e0",
+    rank: "CAPTAIN", status: "alive",
+    wins: 58, losses: 0,
+    abilities: ["Ackerman Power", "Thunder Spears", "ODM Mastery", "Titan Kill Record"],
+    death: null
+  },
+  {
+    anime: "AOT", name: "ZEKE YEAGER", title: "Beast Titan / Warchief",
+    img: "https://i.ibb.co/bgWmRGx5/259b6788e756dbe435cf51c5707ebfb5.jpg",
+    quote: "Dying... is a luxury not everyone can afford.",
+    aura: "#5e7a55",
+    rank: "WARCHIEF", status: "dead",
+    wins: 95, losses: 1,
+    abilities: ["Beast Titan", "Royal Blood", "Titan Control", "Hardening"],
+    death: { by: "Levi Ackerman", reason: "Levi sliced Zeke out of a Titan's stomach and decapitated him during the Rumbling, fulfilling his promise to Erwin." }
+  },
+  {
+    anime: "AOT", name: "ERWIN SMITH", title: "Commander of the Survey Corps",
+    img: "https://i.ibb.co/pBS22H2b/IMG-20260225-WA0067.jpg",
+    quote: "We're going to charge them. Even if it means our deaths.",
+    aura: "#8a7a4a",
+    rank: "COMMANDER", status: "dead",
+    wins: 180, losses: 1,
+    abilities: ["Military Strategy", "Titan Combat", "Vertical Maneuvering", "Leadership"],
+    death: { by: "Beast Titan", reason: "Struck by Zeke's boulder barrage during the charge at Shinganshina. Died leading his soldiers forward in a blaze of glory." }
+  },
+  {
+    anime: "AOT", name: "ARMIN ARLERT", title: "Colossal Titan / 15th Commander",
+    img: "https://i.ibb.co/LXXjhPyY/IMG-20260225-WA0069.jpg",
+    quote: "Someone who can't sacrifice anything can never change anything.",
+    aura: "#d4a84b",
+    rank: "COMMANDER", status: "alive",
+    wins: 67, losses: 3,
+    abilities: ["Colossal Titan", "Strategic Genius", "Tactical Analysis", "Explosive Transformation"],
+    death: null
+  },
+
+  // ──────── DEMON SLAYER ────────
+  {
+    anime: "DS", name: "TANJIRO KAMADO", title: "Demon Slayer / Sun Breathing User",
+    img: "https://i.ibb.co/R4DdsZ7V/04de5c4cfec208825a22875728235414.jpg",
+    quote: "No matter how many people you may lose, you have no choice but to go on living.",
+    aura: "#e8564a",
+    rank: "HASHIRA LVL", status: "alive",
+    wins: 78, losses: 5,
+    abilities: ["Water Breathing", "Hinokami Kagura", "Transparent World", "Demon Slayer Mark"],
+    death: null
+  },
+  {
+    anime: "DS", name: "MUZAN KIBUTSUJI", title: "Demon King / First Demon",
+    img: "https://i.ibb.co/qYZXXKpk/IMG-20260225-WA0075.jpg",
+    quote: "Weaklings exist to be preyed upon by the strong. That is the law of nature.",
+    aura: "#220030",
+    rank: "DEMON KING", status: "dead",
+    wins: 3000, losses: 1,
+    abilities: ["Cellular Manipulation", "Blood Demon Art", "Instant Regeneration", "Shapeshifting"],
+    death: { by: "Sunlight (& All Demon Slayers)", reason: "After being held by Tamayo's drug and the Hashira through the night, Muzan's cells were destroyed by sunrise. The first demon to ever die to the sun." }
+  },
+  {
+    anime: "DS", name: "RENGOKU KYOJURO", title: "Flame Hashira",
+    img: "https://i.ibb.co/vx4MfY7b/IMG-20260225-WA0079.jpg",
+    quote: "Set your heart ablaze!",
+    aura: "#ff6600",
+    rank: "HASHIRA", status: "dead",
+    wins: 102, losses: 1,
+    abilities: ["Flame Breathing", "Ninth Form: Rengoku", "Flame Hashira Mark", "Combat Mastery"],
+    death: { by: "Akaza (Upper Moon 3)", reason: "Pierced through the chest by Akaza at dawn. Refused to become a demon, protecting all 200 passengers of the Mugen Train before drawing his last breath." }
+  },
+  {
+    anime: "DS", name: "AKAZA", title: "Upper Moon Three / Former Human",
+    img: "https://i.ibb.co/TMLZfQbs/f084dd6c30377e24ab5dff59ad8646ca.jpg",
+    quote: "The strong should devour the weak. That is the way of the world.",
+    aura: "#cc2244",
+    rank: "UPPER MOON 3", status: "dead",
+    wins: 520, losses: 1,
+    abilities: ["Destructive Death", "Compass Needle", "Regeneration", "Blood Demon Art"],
+    death: { by: "His own will / Tanjiro", reason: "After Tanjiro awakened the Hinokami Kagura, Akaza's memories of his human life returned. He chose to destroy himself from within rather than continue fighting, ending his own regeneration." }
+  },
+  {
+    anime: "DS", name: "DOUMA", title: "Upper Moon Two / Cult Leader",
+    img: "https://i.ibb.co/fV88c6qk/38fd950698590edd785d51cc7bc841c1.jpg",
+    quote: "I have absorbed so many people... yet I feel nothing. How enviable, to feel.",
+    aura: "#88ddff",
+    rank: "UPPER MOON 2", status: "dead",
+    wins: 1800, losses: 1,
+    abilities: ["Ice Manipulation", "Frozen Blood Demon Art", "Cryokenisis", "Rapid Regeneration"],
+    death: { by: "Kanao & Inosuke (+ Shinobu's poison)", reason: "Shinobu had saturated her body with wisteria poison before letting Douma absorb her. The accumulated poison destroyed him from within as Kanao and Inosuke delivered the final blow." }
+  },
+];
+
+const ANIME_GROUPS = [
+  { key: "JJK",    label: "JUJUTSU KAISEN" },
+  { key: "Naruto", label: "NARUTO" },
+  { key: "AOT",    label: "ATTACK ON TITAN" },
+  { key: "DS",     label: "DEMON SLAYER" },
+];
+
+let currentFilter = "ALL";
+
+function buildGallery() {
+  const root = document.getElementById("gallery-root");
+  root.innerHTML = "";
+
+  const groups = currentFilter === "ALL" ? ANIME_GROUPS : ANIME_GROUPS.filter(g => g.key === currentFilter);
+
+  groups.forEach(group => {
+    const chars = CHARS.filter(c => c.anime === group.key);
+    if (!chars.length) return;
+
+    const section = document.createElement("div");
+
+    // Section header
+    section.innerHTML = `
+      <div class="section-header">
+        <div class="section-title">${group.label}</div>
+        <div class="section-line"></div>
+        <div class="section-count">${chars.length} CHARS</div>
+      </div>
+    `;
+
+    // Scroll row
+    const row = document.createElement("div");
+    row.className = "scroll-row";
+
+    chars.forEach((c, i) => {
+      row.appendChild(buildCard(c, i));
+    });
+
+    section.appendChild(row);
+    section.appendChild(Object.assign(document.createElement("div"), { className: "divider" }));
+    root.appendChild(section);
+  });
+}
+
+function buildCard(c, i) {
+  const wrap = document.createElement("div");
+  wrap.className = "char-card";
+  wrap.style.setProperty("--aura-color", c.aura);
+  wrap.onclick = () => openModal(c);
+
+  const statusText = c.status === "alive" ? "ALIVE" : c.status === "dead" ? "DECEASED" : "UNKNOWN";
+
+  const deathHTML = c.death ? `
+    <div class="death-info">
+      <span class="death-icon">☠</span>
+      <div class="death-text">
+        <span class="death-by">By ${c.death.by}</span><br>
+        ${c.death.reason.substring(0, 80)}...
+      </div>
+    </div>` : "";
+
+  wrap.innerHTML = `
+    <div class="card-glow" style="box-shadow: 0 0 40px 8px ${c.aura}55, 0 0 0 1px ${c.aura}33;"></div>
+    <div class="char-inner">
+      <div class="img-wrap">
+        <img class="char-img" src="${c.img}" alt="${c.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="img-placeholder" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:linear-gradient(160deg,#0d0b18,${c.aura}22);position:absolute;inset:0;">
+          <div style="font-size:2.5rem;opacity:0.5">⚔</div>
+          <div style="font-family:'Bebas Neue',cursive;letter-spacing:3px;font-size:0.8rem;color:${c.aura};text-align:center;padding:0 12px">${c.name}</div>
+        </div>
+        <div class="aura-layer" style="--aura-color:${c.aura};"></div>
+        <div class="rank-badge">${c.rank}</div>
+        <div class="status-badge ${c.status}">${statusText}</div>
+      </div>
+      <div class="card-info">
+        <div class="char-name" style="background: linear-gradient(90deg, #fff, ${c.aura}cc); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">${c.name}</div>
+        <div class="char-title">${c.title}</div>
+        <div class="char-quote" style="border-color:${c.aura}88">"${c.quote}"</div>
+        <div class="stats-row">
+          <div class="stat-box">
+            <span class="stat-num wins">${c.wins}</span>
+            <span class="stat-lbl">WINS</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num losses">${c.losses}</span>
+            <span class="stat-lbl">LOSSES</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num neutral">${c.wins > 0 ? ((c.wins/(c.wins+c.losses))*100).toFixed(0) : 0}%</span>
+            <span class="stat-lbl">WIN RATE</span>
+          </div>
+        </div>
+        ${deathHTML}
+      </div>
+    </div>
+  `;
+  return wrap;
+}
+
+function openModal(c) {
+  document.getElementById("modal-overlay").style.setProperty("--modal-aura", c.aura);
+
+  const statusText = c.status === "alive" ? "ALIVE" : c.status === "dead" ? "DECEASED" : "UNKNOWN";
+
+  document.getElementById("modal-img").src = c.img;
+  document.getElementById("modal-aura").style.background = `radial-gradient(ellipse at center bottom, ${c.aura} 0%, transparent 70%)`;
+  document.getElementById("modal-name").textContent = c.name;
+  document.getElementById("modal-name").style.cssText = `font-family:'Bebas Neue',cursive; font-size:2.2rem; letter-spacing:5px; line-height:1; background:linear-gradient(90deg,#fff,${c.aura}cc); -webkit-background-clip:text; -webkit-text-fill-color:transparent;`;
+  document.getElementById("modal-subtitle").textContent = `${c.title}  ·  ${statusText}  ·  ${c.rank}`;
+  document.getElementById("modal-quote").style.borderLeftColor = c.aura;
+  document.getElementById("modal-quote").innerHTML = `"${c.quote}"`;
+
+  document.getElementById("modal-stats").innerHTML = `
+    <div class="modal-stat">
+      <span class="modal-stat-num" style="color:#44ff88">${c.wins}</span>
+      <span class="modal-stat-lbl">VICTORIES</span>
+    </div>
+    <div class="modal-stat">
+      <span class="modal-stat-num" style="color:#ff6666">${c.losses}</span>
+      <span class="modal-stat-lbl">DEFEATS</span>
+    </div>
+    <div class="modal-stat">
+      <span class="modal-stat-num" style="color:${c.aura}">${c.wins > 0 ? ((c.wins/(c.wins+c.losses))*100).toFixed(1) : 0}%</span>
+      <span class="modal-stat-lbl">WIN RATE</span>
+    </div>
+  `;
+
+  document.getElementById("modal-ability-label").textContent = "ABILITIES & TECHNIQUES";
+  document.getElementById("modal-abilities").innerHTML = c.abilities.map(a =>
+    `<span class="ability-tag" style="border-color:${c.aura}55; color:${c.aura}cc">${a}</span>`
+  ).join("");
+
+  const deathWrap = document.getElementById("modal-death-wrap");
+  if (c.death) {
+    deathWrap.innerHTML = `
+      <div class="modal-death">
+        <div class="modal-death-title">☠ &nbsp;CAUSE OF DEATH</div>
+        <div class="modal-death-cause"><strong>Killed by ${c.death.by}</strong><br><br>${c.death.reason}</div>
+      </div>
+    `;
+  } else {
+    deathWrap.innerHTML = "";
+  }
+
+  document.getElementById("modal-overlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById("modal-overlay")) return;
+  document.getElementById("modal-overlay").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+function filterBy(anime, btn) {
+  currentFilter = anime;
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  buildGallery();
+}
+
+buildGallery();
+</script>
+</body>
+</html>
